@@ -19,7 +19,7 @@ bool elemental_vector::increase_capacity(uint min_new_capacity, bool grow_hint, 
   if (m_capacity >= min_new_capacity)
     return true;
 
-  size_t new_capacity = min_new_capacity;
+  ptr_bits_t new_capacity = min_new_capacity;
   if ((grow_hint) && (!math::is_power_of_2(new_capacity)))
     new_capacity = math::next_pow2(new_capacity);
 
