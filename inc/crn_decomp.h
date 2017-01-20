@@ -2323,11 +2323,11 @@ const void* crnd_get_level_data(const void* pData, uint32 data_size, uint32 leve
 
 uint32 crnd_get_segmented_file_size(const void* pData, uint32 data_size) {
   if ((!pData) || (data_size < cCRNHeaderMinSize))
-    return false;
+    return NULL;
 
   const crn_header* pHeader = crnd_get_header(pData, data_size);
   if (!pHeader)
-    return false;
+    return NULL;
 
   uint32 size = pHeader->m_header_size;
 
