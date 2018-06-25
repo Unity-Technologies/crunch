@@ -9,8 +9,12 @@
 #include "crn_winhdr.h"
 
 #elif defined(__GNUC__)
+#include <fcntl.h>
 #include <fnmatch.h>
 #include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 namespace crnlib {
@@ -195,6 +199,8 @@ bool find_files::find_internal(const char* pBasepath, const char* pRelpath, cons
   if (!dp)
     return level ? true : false;
 
+  const int dirDesc = dirfd(dp);
+
   dynamic_string_array paths;
 
   for (;;) {
@@ -204,8 +210,25 @@ bool find_files::find_internal(const char* pBasepath, const char* pRelpath, cons
     if ((strcmp(ep->d_name, ".") == 0) || (strcmp(ep->d_name, "..") == 0))
       continue;
 
-    const bool is_directory = (ep->d_type & DT_DIR) != 0;
-    const bool is_file = (ep->d_type & DT_REG) != 0;
+    bool is_directory = false, is_file = false;
+
+    if (ep->d_type != DT_UNKNOWN)
+    {
+      is_directory = (ep->d_type & DT_DIR) != 0;
+      is_file = (ep->d_type & DT_REG) != 0;
+    }
+    else
+    {
+      struct stat st;
+      if (fstatat(dirDesc, ep->d_name, &st, AT_SYMLINK_NOFOLLOW) == 0)
+      {
+          is_directory = (st.st_mode & S_IFDIR) != 0;
+          is_file = (st.st_mode & S_IFREG) != 0;
+      }
+    }
+
+    if (!is_directory && !is_file)
+      continue;
 
     dynamic_string filename(ep->d_name);
 
