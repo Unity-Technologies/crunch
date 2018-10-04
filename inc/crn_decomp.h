@@ -130,13 +130,15 @@ void crnd_fail(const char* pExp, const char* pFile, unsigned line);
 namespace crnd {
 void crnd_assert(const char* pExp, const char* pFile, unsigned line);
 
+// Define CRND_ASSERT if there is no user-supplied definition.
+// Note that if there is a user-supplied definition, it is used even if NDEBUG is defined.
+#ifndef CRND_ASSERT
 #ifdef NDEBUG
 #define CRND_ASSERT(x) ((void)0)
-#undef CRND_ASSERTS_ENABLED
 #else
 #define CRND_ASSERT(_exp) (void)((!!(_exp)) || (crnd::crnd_assert(#_exp, __FILE__, __LINE__), 0))
-#define CRND_ASSERTS_ENABLED
 #endif
+#endif // ifndef CRND_ASSERT
 
 void crnd_trace(const char* pFmt, va_list args);
 void crnd_trace(const char* pFmt, ...);
