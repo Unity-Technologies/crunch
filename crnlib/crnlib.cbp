@@ -189,8 +189,6 @@
 		<Unit filename="crn_vector.h" />
 		<Unit filename="crn_vector2d.h" />
 		<Unit filename="crn_winhdr.h" />
-		<Unit filename="crn_zeng.cpp" />
-		<Unit filename="crn_zeng.h" />
 		<Unit filename="crnlib.cbp" />
 		<Unit filename="crnlib.cpp" />
 		<Unit filename="lzma_7zBuf.cpp" />
