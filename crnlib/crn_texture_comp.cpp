@@ -374,7 +374,7 @@ bool create_texture_mipmaps(mipmapped_texture& work_tex, const crn_comp_params& 
   new_width = math::clamp<int>(new_width, 1, cCRNMaxLevelResolution);
   new_height = math::clamp<int>(new_height, 1, cCRNMaxLevelResolution);
 
-  if ((new_width != (int)work_tex.get_width()) || (new_height != (int)work_tex.get_height())) {
+  if ((new_width != (int)work_tex.get_width()) || (new_height != (int)work_tex.get_height()) || (mipmap_params.m_renormalize == true && mipmap_params.m_rtopmip == true)) {
     console::info("Resampling input texture to %ux%u", new_width, new_height);
 
     const char* pFilter = crn_get_mip_filter_name(mipmap_params.m_filter);
