@@ -18,7 +18,7 @@ namespace crnlib
         
         void deallocate(value_type* p, std::size_t) noexcept 
         {
-            crnlib_delete(p);
+            crnlib_free(p);
         }
     };
 
