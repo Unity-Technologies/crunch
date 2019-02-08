@@ -716,7 +716,7 @@ void dxt_hc::determine_color_endpoints() {
     m_pTask_pool->queue_task(&Node::sort_task, i, &nodes[i]);
   m_pTask_pool->join();
 
-  std::priority_queue<Node> queue;
+  std::priority_queue<Node, std::vector<Node, allocator<Node>>> queue;
   for (uint i = 0; i < nodes.size(); i++)
     queue.push(nodes[i]);
 
@@ -1055,7 +1055,7 @@ void dxt_hc::create_color_selector_codebook() {
     m_pTask_pool->queue_task(&SelectorNode::sort_task, i, &nodes[i]);
   m_pTask_pool->join();
 
-  std::priority_queue<SelectorNode> queue;
+  std::priority_queue<SelectorNode, std::vector<SelectorNode, allocator<SelectorNode>>> queue;
   for (uint i = 0; i < nodes.size(); i++)
     queue.push(nodes[i]);
 
@@ -1213,7 +1213,7 @@ void dxt_hc::create_alpha_selector_codebook() {
     m_pTask_pool->queue_task(&SelectorNode::sort_task, i, &nodes[i]);
   m_pTask_pool->join();
 
-  std::priority_queue<SelectorNode> queue;
+  std::priority_queue<SelectorNode, std::vector<SelectorNode, allocator<SelectorNode>>> queue;
   for (uint i = 0; i < nodes.size(); i++)
     queue.push(nodes[i]);
 

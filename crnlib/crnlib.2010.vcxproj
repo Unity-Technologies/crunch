@@ -550,6 +550,7 @@
     <ClInclude Include="crn_dxt_image.h" />
     <ClInclude Include="crn_ktx_texture.h" />
     <ClInclude Include="crn_mipmapped_texture.h" />
+    <ClInclude Include="allocator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
