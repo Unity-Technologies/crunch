@@ -13,12 +13,12 @@ namespace crnlib
 
         value_type* allocate(std::size_t n)
         {
-            return static_cast<T*>(crnlib_malloc(n));
+            return static_cast<T*>(crnlib_malloc(n * sizeof(T)));
         }
         
         void deallocate(value_type* p, std::size_t) noexcept 
         {
-            crnlib_free(p);
+            crnlib_delete(p);
         }
     };
 
