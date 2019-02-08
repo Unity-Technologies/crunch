@@ -4,6 +4,7 @@
 #include "crn_matrix.h"
 #include "crn_threading.h"
 #include <queue>
+#include "allocator.h"
 
 namespace crnlib {
 template <typename VectorType>
@@ -33,7 +34,7 @@ class tree_clusterizer {
 
   void split_alternative_node_task(uint64, void* pData_ptr) {
     split_alternative_node_task_params* pParams = (split_alternative_node_task_params*)pData_ptr;
-    std::priority_queue<NodeInfo> node_queue;
+    std::priority_queue<NodeInfo, std::vector<NodeInfo, allocator<NodeInfo>>> node_queue;
     uint begin_node = pParams->alternative_node, end_node = begin_node, splits = 0;
 
     m_nodes[end_node] = m_nodes[pParams->main_node];
@@ -78,7 +79,7 @@ class tree_clusterizer {
     root.m_variance = (float)(ttsum - (root.m_centroid.dot(root.m_centroid) / root.m_total_weight));
     root.m_centroid *= (1.0f / root.m_total_weight);
 
-    std::priority_queue<NodeInfo> node_queue;
+    std::priority_queue<NodeInfo, std::vector<NodeInfo, allocator<NodeInfo>>> node_queue;
     uint begin_node = 0, end_node = begin_node, splits = 0;
     m_nodes[end_node] = root;
     node_queue.push(NodeInfo(end_node, root.m_variance));
@@ -89,7 +90,7 @@ class tree_clusterizer {
       while (splits < max_splits && node_queue.size() != num_tasks && split_node(node_queue, end_node, pTask_pool))
         splits++;
       if (node_queue.size() == num_tasks) {
-        std::priority_queue<NodeInfo> alternative_node_queue = node_queue;
+        std::priority_queue<NodeInfo, std::vector<NodeInfo, allocator<NodeInfo>>> alternative_node_queue = node_queue;
         uint alternative_node = max_splits << 1, alternative_max_splits = max_splits / num_tasks;
         crnlib::vector<split_alternative_node_task_params> params(num_tasks);
         for (uint task = 0; !alternative_node_queue.empty(); alternative_node_queue.pop(), alternative_node += alternative_max_splits << 1, task++) {
@@ -193,7 +194,8 @@ class tree_clusterizer {
     }
   }
 
-  bool split_node(std::priority_queue<NodeInfo>& node_queue, uint& end_node, task_pool* pTask_pool = 0) {
+  bool split_node(std::priority_queue<NodeInfo, std::vector<NodeInfo, allocator<NodeInfo>>>& node_queue,
+      uint& end_node, task_pool* pTask_pool = 0) {
     if (node_queue.empty())
       return false;
 
