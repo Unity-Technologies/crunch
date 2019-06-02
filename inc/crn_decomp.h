@@ -19,6 +19,9 @@
 #include <stdio.h>
 #ifdef WIN32
 #include <memory.h>
+#elif defined(__FreeBSD__)
+// <malloc.h> has been replaced by <stdlib.h>
+#include <malloc_np.h> // for malloc_usable_size
 #else
 #include <malloc.h>
 #endif
