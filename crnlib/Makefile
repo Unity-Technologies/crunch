@@ -51,7 +51,6 @@ OBJECTS = \
   crn_utils.o \
   crn_value.o \
   crn_vector.o \
-  crn_zeng.o \
   crn_texture_comp.o \
   crn_texture_conversion.o \
   crn_dds_comp.o \
