@@ -32,6 +32,7 @@ void crn_threading_init() {
 #else
   g_number_of_processors = 1;
 #endif
+  g_number_of_processors = math::minimum<int>(g_number_of_processors, task_pool::cMaxThreads);
 }
 
 crn_thread_id_t crn_get_current_thread_id() {
