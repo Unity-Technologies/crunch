@@ -6,6 +6,9 @@
 #ifdef WIN32
 #include <tchar.h>
 #include <conio.h>
+#elif defined(__GNUC__)
+#include <termios.h>
+#include <unistd.h>
 #endif
 namespace crnlib {
 class dynamic_string;
@@ -99,8 +102,6 @@ inline int crn_getch() {
   return _getch();
 }
 #elif defined(__GNUC__)
-#include <termios.h>
-#include <unistd.h>
 inline int crn_getch() {
   struct termios oldt, newt;
   int ch;
