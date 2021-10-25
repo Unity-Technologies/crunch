@@ -14,6 +14,10 @@
 #include <semaphore.h>
 #include <unistd.h>
 
+#if defined(__APPLE__)
+#include <os/lock.h>
+#endif
+
 namespace crnlib {
 // g_number_of_processors defaults to 1. Will be higher on multicore machines.
 extern uint g_number_of_processors;
@@ -71,7 +75,10 @@ class semaphore {
   bool wait(uint32 milliseconds = cUINT32_MAX);
 
  private:
-  sem_t m_sem;
+  sem_t* m_sem;
+#if defined(__APPLE__)
+  const char* m_name;
+#endif
 };
 
 class spinlock {
@@ -83,7 +90,11 @@ class spinlock {
   void unlock();
 
  private:
+#if !defined(__APPLE__)
   pthread_spinlock_t m_spinlock;
+#else
+  os_unfair_lock_t m_lock;
+#endif
 };
 
 class scoped_spinlock {
