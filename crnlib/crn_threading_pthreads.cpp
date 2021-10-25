@@ -11,12 +11,16 @@
 #include "crn_winhdr.h"
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__APPLE__)
 #include <sys/sysinfo.h>
 #endif
 
 #ifdef WIN32
 #include <process.h>
+#endif
+
+#if defined(__APPLE__)
+#include <sys/sysctl.h>
 #endif
 
 namespace crnlib {
@@ -27,6 +31,8 @@ void crn_threading_init() {
   SYSTEM_INFO g_system_info;
   GetSystemInfo(&g_system_info);
   g_number_of_processors = math::maximum<uint>(1U, g_system_info.dwNumberOfProcessors);
+#elif defined(__APPLE__)
+  g_number_of_processors = math::maximum<int>(1, sysconf(_SC_NPROCESSORS_ONLN));
 #elif defined(__GNUC__)
   g_number_of_processors = math::maximum<int>(1, get_nprocs());
 #else
@@ -36,7 +42,7 @@ void crn_threading_init() {
 
 crn_thread_id_t crn_get_current_thread_id() {
   // FIXME: Not portable
-  return static_cast<crn_thread_id_t>(pthread_self());
+  return (crn_thread_id_t)(pthread_self());
 }
 
 void crn_sleep(unsigned int milliseconds) {
@@ -95,15 +101,35 @@ void mutex::set_spin_count(unsigned int count) {
 }
 
 semaphore::semaphore(long initialCount, long maximumCount, const char* pName) {
-  maximumCount, pName;
   CRNLIB_ASSERT(maximumCount >= initialCount);
-  if (sem_init(&m_sem, 0, initialCount)) {
+#if !defined(__APPLE__)
+  maximumCount, pName;
+  m_sem = new sem_t();
+  if (sem_init(m_sem, 0, initialCount)) {
     CRNLIB_FAIL("semaphore: sem_init() failed");
   }
+#else
+  m_name = pName ? pName : "semaphore";
+  for(int i = 0; i < 256; i++) {
+      m_sem = sem_open(m_name, O_CREAT | O_EXCL, 0644, initialCount);
+      if (m_sem != SEM_FAILED)
+      {
+        break;
+      }
+      sem_unlink(m_name);
+  }
+  if (m_sem == SEM_FAILED)
+  {
+      CRNLIB_FAIL("semaphore: sem_open() failed");
+  }
+#endif
 }
 
 semaphore::~semaphore() {
-  sem_destroy(&m_sem);
+  sem_destroy(m_sem);
+#if defined(__APPLE__)
+  sem_unlink(m_name);
+#endif
 }
 
 void semaphore::release(long releaseCount) {
@@ -112,12 +138,12 @@ void semaphore::release(long releaseCount) {
   int status = 0;
 #ifdef WIN32
   if (1 == releaseCount)
-    status = sem_post(&m_sem);
+    status = sem_post(m_sem);
   else
-    status = sem_post_multiple(&m_sem, releaseCount);
+    status = sem_post_multiple(m_sem, releaseCount);
 #else
   while (releaseCount > 0) {
-    status = sem_post(&m_sem);
+    status = sem_post(m_sem);
     if (status)
       break;
     releaseCount--;
@@ -134,12 +160,12 @@ void semaphore::try_release(long releaseCount) {
 
 #ifdef WIN32
   if (1 == releaseCount)
-    sem_post(&m_sem);
+    sem_post(m_sem);
   else
-    sem_post_multiple(&m_sem, releaseCount);
+    sem_post_multiple(m_sem, releaseCount);
 #else
   while (releaseCount > 0) {
-    sem_post(&m_sem);
+    sem_post(m_sem);
     releaseCount--;
   }
 #endif
@@ -148,12 +174,16 @@ void semaphore::try_release(long releaseCount) {
 bool semaphore::wait(uint32 milliseconds) {
   int status;
   if (milliseconds == cUINT32_MAX) {
-    status = sem_wait(&m_sem);
+    status = sem_wait(m_sem);
   } else {
+#if !defined(__APPLE__)
     struct timespec interval;
     interval.tv_sec = milliseconds / 1000;
     interval.tv_nsec = (milliseconds % 1000) * 1000000L;
-    status = sem_timedwait(&m_sem, &interval);
+    status = sem_timedwait(m_sem, &interval);
+#else
+    status = sem_wait(m_sem);
+#endif
   }
 
   if (status) {
@@ -167,25 +197,42 @@ bool semaphore::wait(uint32 milliseconds) {
 }
 
 spinlock::spinlock() {
+#if !defined(__APPLE__)
   if (pthread_spin_init(&m_spinlock, 0)) {
     CRNLIB_FAIL("spinlock: pthread_spin_init() failed");
   }
+#else
+  m_lock = new os_unfair_lock();
+  *m_lock = OS_UNFAIR_LOCK_INIT;
+#endif
 }
 
 spinlock::~spinlock() {
+#if !defined(__APPLE__)
   pthread_spin_destroy(&m_spinlock);
+#else
+  delete m_lock;
+#endif
 }
 
 void spinlock::lock() {
+#if !defined(__APPLE__)
   if (pthread_spin_lock(&m_spinlock)) {
     CRNLIB_FAIL("spinlock: pthread_spin_lock() failed");
   }
+#else
+  os_unfair_lock_lock(m_lock);
+#endif
 }
 
 void spinlock::unlock() {
+#if !defined(__APPLE__)
   if (pthread_spin_unlock(&m_spinlock)) {
     CRNLIB_FAIL("spinlock: pthread_spin_unlock() failed");
   }
+#else
+  os_unfair_lock_unlock(m_lock);
+#endif
 }
 
 task_pool::task_pool()
