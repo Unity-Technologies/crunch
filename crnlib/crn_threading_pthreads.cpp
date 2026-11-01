@@ -146,14 +146,25 @@ void semaphore::try_release(long releaseCount) {
 }
 
 bool semaphore::wait(uint32 milliseconds) {
+  // A signal handler interrupting the wait (EINTR) is not a failure: wait again.
   int status;
   if (milliseconds == cUINT32_MAX) {
-    status = sem_wait(&m_sem);
+    do {
+      status = sem_wait(&m_sem);
+    } while (status && errno == EINTR);
   } else {
-    struct timespec interval;
-    interval.tv_sec = milliseconds / 1000;
-    interval.tv_nsec = (milliseconds % 1000) * 1000000L;
-    status = sem_timedwait(&m_sem, &interval);
+    // sem_timedwait() takes an absolute CLOCK_REALTIME deadline, not an interval.
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec += milliseconds / 1000;
+    deadline.tv_nsec += (milliseconds % 1000) * 1000000L;
+    if (deadline.tv_nsec >= 1000000000L) {
+      deadline.tv_sec++;
+      deadline.tv_nsec -= 1000000000L;
+    }
+    do {
+      status = sem_timedwait(&m_sem, &deadline);
+    } while (status && errno == EINTR);
   }
 
   if (status) {
